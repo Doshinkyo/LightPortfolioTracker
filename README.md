@@ -1,4 +1,4 @@
-# LightPortfolioTracker
+# Light Portfolio Tracker
 
 This is a Portfolio Tracker where users can add their stock positions. Including the Company (by Ticker), Volume of stocks and Average Price/Open Price. It features a refresh function allowing users to see up to date data on P&L.
 
