@@ -2,17 +2,19 @@
 # Import Required Modules #
 # # # # # # # # # # # # # #
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
-from tkhtmlview import HTMLLabel
-from pathlib import Path
 import sqlite3
 import yfinance as yf
 import time
-from datetime import datetime
+import Pmw
+from tkinter import ttk
+from tkinter import messagebox
 from tkinter import font
 from tkinter import *
-from tkinter.tix import *
+from tkhtmlview import HTMLLabel
+from pathlib import Path
+from datetime import datetime
+
+# from tkinter.tix import *
 
 # # # # # # # # # # # # # # #
 # Application's Main Window #
@@ -25,12 +27,9 @@ window.geometry("780x620")
 default_font = font.nametofont("TkDefaultFont")
 default_font.configure(family="Segoe UI", size=8, weight=font.BOLD)
 
-tip = Balloon(window)
-tip.config(bg="#757575", bd=2)
-tip.label.config(bg="#757575", fg="#757575", bd=2)
-for index,sub in enumerate (tip.subwidgets_all()) :
-    if index > 0:
-        sub.configure(bg="white")
+Pmw.initialise(window)
+balloonmsg = Pmw.Balloon(window, initwait=800, relmouse="both", xoffset=15, yoffset=5)
+print(balloonmsg.options())
 
 window.columnconfigure(0, weight=2)
 window.columnconfigure(1, weight=9)
@@ -182,9 +181,9 @@ for col in columns:
     tv.heading(col, command=lambda _col=col: \
                      treeview_column_sort(tv, _col, False))
 
-# # # # # # # # # # # # #
-# Refresh The Portfolio #
-# # # # # # # # # # # # #
+# # # # # # # # # # # # # # # #
+# Refresh The Treeview Table  #
+# # # # # # # # # # # # # # # #
 def refresh_tree():
     children = tv.get_children()
     if children:
@@ -197,7 +196,6 @@ def refresh_tree():
     for i in records:
             tv.insert("", "end", values=i)
     
-    global now
     now =str(datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
     
     row_count = c.execute("SELECT * FROM portfolio")
@@ -208,16 +206,16 @@ def refresh_tree():
     
     status_bar["text"] = ("Data Refreshed As Of: " + now)
 
-# Run edit_row() and save_update() for each row in the tree view.
-
+# # # # # # # # # # # # #
+# Refresh The Portfolio #
+# # # # # # # # # # # # #
 def market_data_refresh():
     conn = sqlite3.connect("light_portfolio_database.db")
     c = conn.cursor()
-    # c.execute("SELECT * FROM portfolio")
-    # results = c.fetchall
+    c.execute("SELECT *, oid FROM portfolio")
+    records =  c.fetchall()
     
-    for row in c.execute("SELECT *, oid FROM portfolio"):
-        record=row
+    for record in records:
         mdr_ticker=(record[0]) # REQ
         mdr_open_price=(record[3]) # REQ
         mdr_oid=str(record[6]) # REQ
@@ -227,30 +225,25 @@ def market_data_refresh():
         mdr_string_diff=str(mdr_diff)
         mdr_change=(mdr_string_diff + "%")
 
-        status_bar["text"] = "Refreshing Market Data..."
+        status_bar["text"] = ("Refreshing Market Data for: " + mdr_ticker)
+        
+        window.update()
         window.update_idletasks()
-        time.sleep(0.33) 
-
-
+        
         c.execute("""UPDATE portfolio SET 
-                    openPrice = :openPrice,
-                    currentPrice = :currentPrice,
-                    change = :change
+            currentPrice = :currentPrice,
+            change = :change
 
-                    WHERE oid=""" + mdr_oid,
+            WHERE oid=""" + mdr_oid,
 
-                    {
-                    "openPrice": mdr_open_price,
-                    "currentPrice": mdr_current_price,
-                    "change": mdr_change
-                    })
+            {
+            "currentPrice": mdr_current_price,
+            "change": mdr_change
+            })
+
     conn.commit()
     conn.close()
     refresh_tree()
-    status_bar["text"] = ("Market Data Refreshed As Of: " + now)
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # # # # # # # # # # # # # #
 # Add Ticker To Portfolio #
@@ -427,19 +420,19 @@ def delete_row():
 # # # # # # # # # # # # # # # # #
 add_btn = tk.Button(borderwidth=1, relief="ridge", text="Add Position", command=addTicker, bg="#DBDBDB", width=16, height=0)
 add_btn.grid(row=2, column=4, columnspan=1, sticky=tk.E, padx=20, ipadx=3, ipady=3)
-tip.bind_widget(add_btn, balloonmsg="Add the stock Ticker, Volume\nand Open Price to Portfolio.\n ") # Deprecated and should not be used!
+balloonmsg.bind(add_btn, "Add the stock Ticker, Volume\nand Open Price to Portfolio.")
 
 ref_btn = tk.Button(borderwidth=1, relief="ridge", text="Refresh Data", command=market_data_refresh, bg="#DBDBDB", width=16, height=0)
 ref_btn.grid(row=3, column=4, columnspan=1, sticky=tk.E, padx=20, ipadx=3, ipady=3)
-tip.bind_widget(ref_btn, balloonmsg="Refresh the Portfolio with up to date\nprice data from Yahoo Finance\n ") # Deprecated and should not be used!
+balloonmsg.bind(ref_btn, "Refresh the Portfolio with up to date\nprice data from Yahoo Finance.")
 
 edt_btn = tk.Button(borderwidth=1, relief="ridge", text="Edit Selected", command=edit_row, bg="#DBDBDB", width=16, height=0)
 edt_btn.grid(row=4, column=4, columnspan=1, sticky=tk.E, padx=20, ipadx=3, ipady=3)
-tip.bind_widget(edt_btn, balloonmsg="Edit a selected row\nin the Portfolio.\n ") # Deprecated and should not be used!
+balloonmsg.bind(edt_btn, "Edit a selected row\nin the Portfolio.")
 
 del_btn = tk.Button(borderwidth=1, relief="ridge", text="Delete Selected", command=delete_row, bg="#DBDBDB", width=16, height=0)
 del_btn.grid(row=2, column=5, columnspan=1, sticky=tk.E, padx=20, ipadx=3, ipady=3)
-tip.bind_widget(del_btn, balloonmsg="Delete the selected row\nfrom the Portfolio.\n ") # Deprecated and should not be used!
+balloonmsg.bind(del_btn, "Delete the selected row\nfrom the Portfolio.")
 
 # # # # # # # # # # # # # # # # # # # 
 # Add Ticker When Enter Key Pressed #
