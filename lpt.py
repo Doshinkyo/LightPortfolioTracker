@@ -436,16 +436,19 @@ def port_summ_func():
         pos_val_mkt.append(position_value)
     port_val_mkt=round(sum(pos_val_mkt),2)
 
-    change_value=round((port_val_mkt - port_val_open),2)
-    change_pcnt=round((port_val_mkt / port_val_open - 1)*100, 2)
+    if port_val_mkt and port_val_open > 0:
+        change_value=round((port_val_mkt - port_val_open),2)
+        change_pcnt=round((port_val_mkt / port_val_open - 1)*100, 2)
 
-    if port_val_open <= port_val_mkt:
-        inc_or_dec="Increase"
+        if port_val_open <= port_val_mkt:
+            inc_or_dec="Increase"
+        else:
+            inc_or_dec="Decrease"
+
+        summary ["text"] = (f"Total Invested ${port_val_open:,} - Current Market Value ${port_val_mkt:,} - {inc_or_dec} of: ${change_value:,} (%{change_pcnt:,})") # Thx Bobo
     else:
-        inc_or_dec="Decrease"
-
-    summary ["text"] = (f"Total Invested ${port_val_open:,} - Current Market Value ${port_val_mkt:,} - {inc_or_dec} of: ${change_value:,} (%{change_pcnt:,})") # Thx Bobo
-
+        pass
+    
     conn.close()
 port_summ_func()
 
