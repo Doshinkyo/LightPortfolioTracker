@@ -448,14 +448,14 @@ def port_summ_func():
         summary ["text"] = (f"Total Invested ${port_val_open:,} - Current Market Value ${port_val_mkt:,} - {inc_or_dec} of: ${change_value:,} (%{change_pcnt:,})") # Thx Bobo
     else:
         pass
-    
+
     conn.close()
 port_summ_func()
 
 # # # # # # # # # # # # # # # # #
 # Database Manipulation Buttons #
 # # # # # # # # # # # # # # # # #
-add_btn = tk.Button(borderwidth=1, relief="ridge", text="Add Position", command=addTicker, bg="#DBDBDB", width=16, height=0)
+add_btn = tk.Button(borderwidth=1, relief="ridge", text="Add Position", command=lambda:[addTicker(),port_summ_func()], bg="#DBDBDB", width=16, height=0)
 add_btn.grid(row=2, column=4, columnspan=1, sticky=tk.E, padx=20, ipadx=3, ipady=3)
 balloonmsg.bind(add_btn, "Add the stock Ticker, Volume\nand Open Price to Portfolio.")
 
@@ -478,6 +478,7 @@ balloonmsg.bind(del_btn, "Delete the selected row\nfrom the Portfolio.")
 def return_add(event):
     status_bar["text"] = "Adding Stock To Portfolio"
     addTicker()
+    port_summ_func()
 window.bind('<Return>', return_add)
 
 # # # # # # # # #
