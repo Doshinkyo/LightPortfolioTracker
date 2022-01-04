@@ -14,8 +14,6 @@ from tkhtmlview import HTMLLabel
 from pathlib import Path
 from datetime import datetime
 
-# from tkinter.tix import *
-
 # # # # # # # # # # # # # # #
 # Application's Main Window #
 # # # # # # # # # # # # # # #
@@ -115,8 +113,11 @@ open_price.grid(row=4, column=0, rowspan=1, columnspan=1, padx=(15,5), ipadx=5, 
 open_price_entry=tk.Entry(text="")
 open_price_entry.grid(row=4, column=1, rowspan=1, columnspan=3, ipadx=5, ipady=1, pady=5, sticky="WE")
 
+summary=tk.Label(text="") 
+summary.grid(row=14, column=0, rowspan=2, columnspan=6, padx=(15,5), ipadx=5, sticky="W")
+
 status_bar = tk.Label(text="Displaying Portfolio")
-status_bar.grid(row=16, column=0, columnspan=6, sticky=tk.W + tk.N, ipadx=10, ipady=7)
+status_bar.grid(row=16, column=0, columnspan=6, sticky=tk.W + tk.N, padx=(10,5), ipadx=10, ipady=7)
 
 ticker_volume=tk.Label(text="~ PORTFOLIO ~")
 ticker_volume.grid(row=6, column=0, rowspan=1, columnspan=1, padx=(15,5), ipadx=5, sticky="W")
@@ -158,7 +159,7 @@ for i in records:
         tv.insert("", "end", values=i)
 conn.close()
 
-# # # # # # # # # # # # #   ********* KNOWN ISSUE: ONLY WORKS AS DESIRED ON TICKER AND COMPANY COLUMNS AS INTEGERS ARE STORED AS STRINGS SO NOT SORTING PROPERLY *********
+# # # # # # # # # # # # #   ********* KNOWN ISSUE: #3  *********
 # Column Sort Function  #
 # # # # # # # # # # # # #
 def treeview_column_sort(tv, col, reverse):
@@ -204,7 +205,7 @@ def refresh_tree():
     
     conn.close()
     
-    status_bar["text"] = ("Data Refreshed As Of: " + now)
+    status_bar["text"] = ("Refreshed: " + now)
 
 # # # # # # # # # # # # #
 # Refresh The Portfolio #
@@ -311,10 +312,9 @@ def addTicker():
 # # # # # # # # # # # # # # #
 def edit_row():
     try:
-        current_row = tv.selection()[0] # Used to check that a row is selected need to error handle multiple row selections / test handling of multiple rows.
+        current_row = tv.selection()[0] # Check a row is selected
         for item in tv.selection():
             
-            global editor
             editor = Tk()
             editor.title("Update A Position")
             editor.geometry("274x190")
@@ -414,7 +414,41 @@ def delete_row():
             conn.close()
     except IndexError:
         messagebox.showerror(title="No Selection", message="Select a row in your portfolio for deletion!")
-    
+
+# # # # # # # # # # #
+# Portfolio Summary #
+# # # # # # # # # # #
+def port_summ_func():
+    conn = sqlite3.connect("light_portfolio_database.db")
+    c = conn.cursor()
+    c.execute("SELECT *, oid FROM portfolio")
+    port =  c.fetchall()
+
+    pos_val_open = list()
+    for i in port:
+        position_value=(i[2]*i[3])
+        pos_val_open.append(position_value)
+    port_val_open=round(sum(pos_val_open),2)
+
+    pos_val_mkt = list()
+    for i in port:
+        position_value=(i[2]*i[4])
+        pos_val_mkt.append(position_value)
+    port_val_mkt=round(sum(pos_val_mkt),2)
+
+    change_value=round((port_val_mkt - port_val_open),2)
+    change_pcnt=round((port_val_mkt / port_val_open - 1)*100, 2)
+
+    if port_val_open <= port_val_mkt:
+        inc_or_dec="Increase"
+    else:
+        inc_or_dec="Decrease"
+
+    summary ["text"] = (f"Total Invested ${port_val_open:,} - Current Market Value ${port_val_mkt:,} - {inc_or_dec} of: ${change_value:,} (%{change_pcnt:,})") # Thx Bobo
+
+    conn.close()
+port_summ_func()
+
 # # # # # # # # # # # # # # # # #
 # Database Manipulation Buttons #
 # # # # # # # # # # # # # # # # #
@@ -434,6 +468,7 @@ del_btn = tk.Button(borderwidth=1, relief="ridge", text="Delete Selected", comma
 del_btn.grid(row=2, column=5, columnspan=1, sticky=tk.E, padx=20, ipadx=3, ipady=3)
 balloonmsg.bind(del_btn, "Delete the selected row\nfrom the Portfolio.")
 
+
 # # # # # # # # # # # # # # # # # # # 
 # Add Ticker When Enter Key Pressed #
 # # # # # # # # # # # # # # # # # # #
@@ -441,22 +476,6 @@ def return_add(event):
     status_bar["text"] = "Adding Stock To Portfolio"
     addTicker()
 window.bind('<Return>', return_add)
-
-# # # # # # # # # # #  **************** WORK IN PROGRESS ************
-# Portfolio Summary #
-# # # # # # # # # # #
-# currency_summary = "3498"
-# percentage_summary = int(45)
-# if percentage_summary >=0:
-#     up_down_cond = "increased"
-# else:
-#     up_down_cond = "decreased"
-# currency_summary_str = str(currency_summary)
-# percentage_summary_str = str(percentage_summary)
-# up_down_cond_str = str(up_down_cond)
-
-# summary_lbl=tk.Label(text="Your portfolio has " + up_down_cond_str +  " by $" + currency_summary_str + " (" + percentage_summary_str + "%)", justify="center")
-# summary_lbl.grid(row=13, column=1, rowspan=4, columnspan=4, sticky="WE")
 
 # # # # # # # # #
 # Confirm Close # Currently disabled, to enable remove rem's
